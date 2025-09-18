@@ -138,11 +138,11 @@ draw();
 const grid=document.getElementById("grid");
 const slots=[document.getElementById("slot0"),document.getElementById("slot1"),document.getElementById("slot2")];
 const scoreEl=document.getElementById("score"),bestEl=document.getElementById("best");
-const secret=document.getElementById("secret"),closeSecret=document.getElementById("close-secret");
+const secret=document.getElementById("secret");
 let board=[],score=0,best=0,currentPiece=null,scoreMultiplier=1;
 const SECRET_SCORE=1000;
-const secretMessage=`
-💖 Djene 💖
+const secretAudio=new Audio("sound/music.mp3"); secretAudio.preload="auto";
+const secretMessage=`💖 Djene 💖
 
 Depuis la 6ème, le jour où nos regards se sont croisés pour la première fois, mon cœur t’avait déjà choisie.
 
@@ -162,9 +162,7 @@ Djene, tu es et resteras celle qui a changé ma vie, celle que j’ai aimée dep
 
 Peu importe les épreuves, peu importe la distance ou le temps : mon amour pour toi est éternel, pur et sincère.
 
-💖 Je t’aime, Djene, aujourd’hui, demain et pour toujours. 💖
-`;
-const secretAudio=new Audio("sound/music.mp3"); secretAudio.preload="auto";
+💖 Je t’aime, Djene, aujourd’hui, demain et pour toujours. 💖`;
 
 // Initialize
 function init(){
@@ -191,27 +189,40 @@ function genPieces(){
   }
 }
 
-// Drag & Drop & Preview
+// Drag & Drop Desktop + Mobile
 let previewCells=[];
-grid.addEventListener("dragover",e=>e.preventDefault());
-grid.addEventListener("drop",e=>{
-  e.preventDefault(); if(!currentPiece) return;
-  const rect=grid.getBoundingClientRect(),cellSize=rect.width/10;
-  const x=Math.floor((e.clientX-rect.left)/cellSize),y=Math.floor((e.clientY-rect.top)/cellSize);
-  placePiece(currentPiece.shape,currentPiece.color,x,y); currentPiece=null;
-});
+function handleMove(x, y){
+  previewCells.forEach(c=>c.style.backgroundColor=''); previewCells=[];
+  if(!currentPiece || !canPlace(currentPiece.shape, x, y)) return;
+  currentPiece.shape.forEach((row,dy)=>row.forEach((val,dx)=>{
+    if(val){const cell=grid.children[(y+dy)*10+(x+dx)]; cell.style.backgroundColor='rgba(255,255,255,0.2)'; previewCells.push(cell);}
+  }));
+}
+
 grid.addEventListener("mousemove", e=>{
   if(!currentPiece) return;
   const rect=grid.getBoundingClientRect(),cellSize=rect.width/10;
-  const x=Math.floor((e.clientX-rect.left)/cellSize),y=Math.floor((e.clientY-rect.top)/cellSize);
-  previewCells.forEach(c=>c.style.backgroundColor=''); previewCells=[];
-  if(canPlace(currentPiece.shape,x,y)){
-    currentPiece.shape.forEach((row,dy)=>row.forEach((val,dx)=>{
-      if(val){const cell=grid.children[(y+dy)*10+(x+dx)]; cell.style.backgroundColor='rgba(255,255,255,0.2)'; previewCells.push(cell);}
-    }));
-  }
+  handleMove(Math.floor((e.clientX-rect.left)/cellSize), Math.floor((e.clientY-rect.top)/cellSize));
 });
 grid.addEventListener("mouseleave", ()=>{previewCells.forEach(c=>c.style.backgroundColor=''); previewCells=[];});
+grid.addEventListener("touchmove", e=>{
+  if(!currentPiece) return;
+  const touch=e.touches[0]; const rect=grid.getBoundingClientRect(); const cellSize=rect.width/10;
+  handleMove(Math.floor((touch.clientX-rect.left)/cellSize), Math.floor((touch.clientY-rect.top)/cellSize));
+});
+
+grid.addEventListener("drop", e=>{e.preventDefault(); dropPiece(e.clientX, e.clientY);});
+grid.addEventListener("dragover", e=>e.preventDefault());
+grid.addEventListener("touchend", e=>{const touch=e.changedTouches[0]; dropPiece(touch.clientX, touch.clientY);});
+
+function dropPiece(clientX, clientY){
+  if(!currentPiece) return;
+  const rect=grid.getBoundingClientRect(),cellSize=rect.width/10;
+  const x=Math.floor((clientX-rect.left)/cellSize),y=Math.floor((clientY-rect.top)/cellSize);
+  placePiece(currentPiece.shape,currentPiece.color,x,y);
+  currentPiece=null;
+  previewCells.forEach(c=>c.style.backgroundColor=''); previewCells=[];
+}
 
 // Can Place
 function canPlace(shape,x,y){
@@ -256,8 +267,6 @@ function showSecret(){
   });
   card.classList.add("show");
   secretAudio.currentTime=0; secretAudio.play().catch(()=>console.log("Interaction requise"));
-
-  // Confetti
   for(let i=0;i<150;i++){
     const c=document.createElement("div"); c.className="confetti";
     c.style.backgroundColor=colors[Math.floor(Math.random()*colors.length)];
@@ -272,7 +281,6 @@ function showSecret(){
 // Buttons
 document.getElementById("new").onclick=init;
 document.getElementById("shuffle").onclick=genPieces;
-closeSecret?.addEventListener("click",()=>secret.classList.remove("show"));
 
 // Start Game
 init();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Block Blast Pro Mobile</title>
+<title>Block Blast Pro</title>
 <style>
 :root{
   --card-bg:#4b6bd6;
@@ -13,7 +13,6 @@
 }
 *{box-sizing:border-box;font-family:Inter,'Segoe UI',Roboto,Arial,sans-serif;}
 html,body{margin:0;height:100%;background:#000;overflow:hidden;}
-
 #bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;}
 
 .stage{
@@ -21,7 +20,6 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;}
   background:linear-gradient(180deg,var(--card-bg),#5977d6);
   color:#fff;position:relative;box-shadow:0 10px 30px rgba(0,0,0,.6);z-index:1;
 }
-
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .score{font-size:48px;font-weight:700;text-align:center;flex:1;transition:transform .2s;}
 .score.animate{transform:scale(1.3);}
@@ -31,8 +29,6 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;}
 .grid{width:100%;max-width:360px;aspect-ratio:1/1;background:rgba(0,0,0,0.15);
 display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(10,1fr);gap:4px;padding:8px;border-radius:6px;position:relative;}
 .cell{background:rgba(255,255,255,0.02);border-radius:4px;display:flex;align-items:center;justify-content:center;transition:background .2s;}
-.cell.highlight-valid{background:rgba(57,211,83,0.5);}
-.cell.highlight-invalid{background:rgba(255,107,107,0.5);}
 .tile{width:100%;height:100%;border-radius:4px;box-shadow:inset -4px -4px 0 rgba(0,0,0,.12);transition:transform .2s,opacity .2s;}
 
 .controls{display:flex;justify-content:space-around;align-items:center;margin-top:18px;width:100%;}
@@ -51,49 +47,83 @@ display:flex;align-items:center;justify-content:center;padding:4px;position:rela
 .c-5{background:#ff6b6b}
 .c-6{background:#3b82f6}
 
-.secret{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.6));backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:all .28s ease;}
-.secret.show{opacity:1;pointer-events:auto}
-.secret-card{background:#fff;color:#111;padding:28px;border-radius:18px;max-width:320px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.35);}
-.secret-card h2{margin:0 0 8px;font-size:22px;}
-.secret-card p{margin:0 0 14px;}
+/* Secret Message */
+.secret{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+  opacity:0;pointer-events:none;transition:opacity 0.4s ease;
+  z-index:10;
+}
+.secret.show{opacity:1;pointer-events:auto;}
+.secret-card{
+  background: linear-gradient(135deg, rgba(255,240,245,0.95), rgba(255,230,250,0.95));
+  color:#111;
+  padding:32px 28px;
+  border-radius:40px;
+  max-width:500px;
+  width:90%;
+  text-align:left;
+  box-shadow:0 25px 60px rgba(0,0,0,0.35);
+  transform:scale(0.5);
+  opacity:0;
+  font-size:20px;
+  line-height:1.8;
+  font-family:'Segoe UI','Inter',sans-serif;
+  transition: transform 0.6s cubic-bezier(0.68,-0.55,0.27,1.55),opacity 0.6s ease;
+  max-height:80vh; overflow-y:auto; padding-right:12px;
+}
+.secret-card.show{
+  transform:scale(1);
+  opacity:1;
+  animation:pulse 1.2s ease infinite alternate;
+}
+@keyframes pulse{
+  0%{box-shadow:0 25px 60px rgba(0,0,0,0.3);}
+  100%{box-shadow:0 30px 75px rgba(0,0,0,0.5);}
+}
+
+/* Confetti */
+.confetti{
+  position:absolute;width:8px;height:8px;border-radius:50%;pointer-events:none;
+  opacity:0.9;
+  animation:confetti-fall linear infinite;
+}
+@keyframes confetti-fall{
+  0%{transform:translateY(0);}
+  100%{transform:translateY(100vh);}
+}
 </style>
 </head>
 <body>
 <canvas id="bg"></canvas>
 <div class="stage">
-<div class="header">
-  <div class="crown">👑 <span id="best">0</span></div>
-  <div class="score" id="score">0</div>
-  <div style="width:36px"></div>
-</div>
-
-<div class="board-wrap">
-  <div class="grid" id="grid"></div>
-  <div class="controls">
-    <div class="piece-slot" id="slot0"></div>
-    <div class="piece-slot" id="slot1"></div>
-    <div class="piece-slot" id="slot2"></div>
+  <div class="header">
+    <div class="crown">👑 <span id="best">0</span></div>
+    <div class="score" id="score">0</div>
+    <div style="width:36px"></div>
   </div>
-  <div style="display:flex;justify-content:center;gap:8px;width:100%">
-    <button class="btn" id="new">Nouvelle partie</button>
-    <button class="btn" id="shuffle">Changer pièces</button>
-  </div>
-</div>
 
-<div class="secret" id="secret">
-<div class="secret-card">
-  <h2>Félicitations ! 🎉</h2>
-  <p>Tu as découvert le message secret ✨</p>
-  <p id="secret-text" style="font-weight:700">Message caché : <span>« Bravo, développeur curieux »</span></p>
-  <button class="btn" id="close-secret">Fermer</button>
-</div>
-</div>
+  <div class="board-wrap">
+    <div class="grid" id="grid"></div>
+    <div class="controls">
+      <div class="piece-slot" id="slot0"></div>
+      <div class="piece-slot" id="slot1"></div>
+      <div class="piece-slot" id="slot2"></div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:8px;width:100%">
+      <button class="btn" id="new">Nouvelle partie</button>
+      <button class="btn" id="shuffle">Changer pièces</button>
+    </div>
+  </div>
+
+  <div class="secret" id="secret">
+    <div class="secret-card"></div>
+  </div>
 </div>
 
 <script>
-// === Fond animé avec particules néon ===
-const canvas=document.getElementById("bg");
-const ctx=canvas.getContext("2d");
+// Background Particles
+const canvas=document.getElementById("bg"),ctx=canvas.getContext("2d");
 let W,H;
 function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
 window.addEventListener("resize",resize);resize();
@@ -104,133 +134,163 @@ draw();
 </script>
 
 <script>
+// Game Logic
 const grid=document.getElementById("grid");
 const slots=[document.getElementById("slot0"),document.getElementById("slot1"),document.getElementById("slot2")];
-const scoreEl=document.getElementById("score");
-const bestEl=document.getElementById("best");
-const secret=document.getElementById("secret");
-const closeSecret=document.getElementById("close-secret");
-const SECRET_SCORE=500;
+const scoreEl=document.getElementById("score"),bestEl=document.getElementById("best");
+const secret=document.getElementById("secret"),closeSecret=document.getElementById("close-secret");
+let board=[],score=0,best=0,currentPiece=null,scoreMultiplier=1;
+const SECRET_SCORE=1000;
+const secretMessage=`
+💖 Djene 💖
 
-let board=[],score=0,best=0,currentPiece=null,ghostTiles=[],particlesArr=[];
+Depuis la 6ème, le jour où nos regards se sont croisés pour la première fois, mon cœur t’avait déjà choisie.
 
-const SHAPES=[[[1]],[[1,1]],[[1,1,1]],[[1],[1],[1]],[[1,1],[1,1]],[[1,1,1],[0,1,0]],[[1,1,0],[0,1,1]]];
+J’ai gardé ce sentiment secret pendant des années, jusqu’en 4ème-5ème, quand enfin nos cœurs se sont rejoints.
 
+Dans notre couple, il y a eu des moments magnifiques, des rires, des complicités, mais aussi des périodes difficiles.
+
+Pourtant, même dans ces épreuves, je n’ai jamais cessé de t’aimer.
+
+Devant Allah, j’ai fait le serment de t’épouser, et après ce serment, j’ai changé pour devenir la meilleure version de moi-même, car ton amour m’a transformé positivement.
+
+Mais avec le temps, nous avons commencé à avoir des disputes, des désaccords, jusqu’à ce que nous soyons obligés de nous séparer.
+
+Même si nous n’avions pas encore la mentalité pour tenir à ce moment-là, il y a une chose dont je suis certain : je finirai ma vie avec toi.
+
+Djene, tu es et resteras celle qui a changé ma vie, celle que j’ai aimée depuis le premier regard, et celle avec qui je veux partager mon futur.
+
+Peu importe les épreuves, peu importe la distance ou le temps : mon amour pour toi est éternel, pur et sincère.
+
+💖 Je t’aime, Djene, aujourd’hui, demain et pour toujours. 💖
+`;
+const secretAudio=new Audio("sound/music.mp3"); secretAudio.preload="auto";
+
+// Initialize
 function init(){
-  board=[];grid.innerHTML="";
-  for(let r=0;r<10;r++){
-    const row=[];
-    for(let c=0;c<10;c++){
-      const cell=document.createElement("div");cell.className="cell";grid.appendChild(cell);row.push(null);
-    }board.push(row);
-  }
-  score=0;scoreEl.textContent=0;
+  board=[]; grid.innerHTML="";
+  for(let r=0;r<10;r++){const row=[];for(let c=0;c<10;c++){const cell=document.createElement("div");cell.className="cell";grid.appendChild(cell);row.push(null);}board.push(row);}
+  score=0; scoreMultiplier=1; updateScore();
   genPieces();
 }
 
+// Shapes
+const SHAPES=[[[1]],[[1,1]],[[1,1,1]],[[1],[1],[1]],[[1,1],[1,1]],[[1,1,1],[0,1,0]],[[1,1,0],[0,1,1]]];
+
+// Generate Pieces
 function genPieces(){
   slots.forEach(s=>s.innerHTML="");
   for(let i=0;i<3;i++){
     const shape=SHAPES[Math.floor(Math.random()*SHAPES.length)];
     const colorClass="c-"+(1+Math.floor(Math.random()*6));
-    const piece=document.createElement("div");piece.className="piece";piece.style.gridTemplateColumns=`repeat(${shape[0].length},var(--tile-size))`;
-    shape.forEach(row=>{row.forEach(val=>{const t=document.createElement("div");t.style.width=t.style.height="var(--tile-size)";if(val)t.className="tile "+colorClass;piece.appendChild(t);});});
-    piece.dataset.shape=JSON.stringify(shape);
-    piece.dataset.color=colorClass;
-    piece.addEventListener("pointerdown",startDrag);
+    const piece=document.createElement("div"); piece.className="piece"; piece.style.gridTemplateColumns=`repeat(${shape[0].length},var(--tile-size))`;
+    shape.forEach(row=>row.forEach(val=>{const t=document.createElement("div"); if(val){t.className="tile "+colorClass;} t.style.width="var(--tile-size)"; t.style.height="var(--tile-size)"; piece.appendChild(t);}));
+    piece.draggable=true; piece.dataset.shape=JSON.stringify(shape); piece.dataset.color=colorClass;
+    piece.addEventListener("dragstart",()=>{currentPiece={shape,color:colorClass,element:piece};});
     slots[i].appendChild(piece);
   }
 }
 
-function startDrag(e){
-  e.preventDefault();const piece=this;
-  currentPiece={shape:JSON.parse(piece.dataset.shape),color:piece.dataset.color,element:piece};
-  piece.classList.add("dragging");
-  function moveDrag(ev){
-    ev.preventDefault();const x=ev.clientX||ev.touches[0].clientX;
-    const y=ev.clientY||ev.touches[0].clientY;
-    piece.style.position="fixed";piece.style.left=x-piece.offsetWidth/2+"px";piece.style.top=y-piece.offsetHeight/2+"px";
-    updateGhost(x,y);
+// Drag & Drop & Preview
+let previewCells=[];
+grid.addEventListener("dragover",e=>e.preventDefault());
+grid.addEventListener("drop",e=>{
+  e.preventDefault(); if(!currentPiece) return;
+  const rect=grid.getBoundingClientRect(),cellSize=rect.width/10;
+  const x=Math.floor((e.clientX-rect.left)/cellSize),y=Math.floor((e.clientY-rect.top)/cellSize);
+  placePiece(currentPiece.shape,currentPiece.color,x,y); currentPiece=null;
+});
+grid.addEventListener("mousemove", e=>{
+  if(!currentPiece) return;
+  const rect=grid.getBoundingClientRect(),cellSize=rect.width/10;
+  const x=Math.floor((e.clientX-rect.left)/cellSize),y=Math.floor((e.clientY-rect.top)/cellSize);
+  previewCells.forEach(c=>c.style.backgroundColor=''); previewCells=[];
+  if(canPlace(currentPiece.shape,x,y)){
+    currentPiece.shape.forEach((row,dy)=>row.forEach((val,dx)=>{
+      if(val){const cell=grid.children[(y+dy)*10+(x+dx)]; cell.style.backgroundColor='rgba(255,255,255,0.2)'; previewCells.push(cell);}
+    }));
   }
-  function endDrag(ev){
-    piece.classList.remove("dragging");piece.style.position="";piece.style.left="";piece.style.top="";
-    clearGhost();
-    const rect=grid.getBoundingClientRect();
-    const x=Math.floor(((ev.clientX||ev.changedTouches[0].clientX)-rect.left)/(rect.width/10));
-    const y=Math.floor(((ev.clientY||ev.changedTouches[0].clientY)-rect.top)/(rect.height/10));
-    placePiece(currentPiece.shape,currentPiece.color,x,y);currentPiece=null;
-    window.removeEventListener("pointermove",moveDrag);window.removeEventListener("pointerup",endDrag);
-    window.removeEventListener("touchmove",moveDrag);window.removeEventListener("touchend",endDrag);
-  }
-  window.addEventListener("pointermove",moveDrag);
-  window.addEventListener("pointerup",endDrag);
-  window.addEventListener("touchmove",moveDrag,{passive:false});
-  window.addEventListener("touchend",endDrag);
+});
+grid.addEventListener("mouseleave", ()=>{previewCells.forEach(c=>c.style.backgroundColor=''); previewCells=[];});
+
+// Can Place
+function canPlace(shape,x,y){
+  for(let dy=0;dy<shape.length;dy++) for(let dx=0;dx<shape[0].length;dx++) if(shape[dy][dx]){if(y+dy>=10||x+dx>=10||board[y+dy][x+dx]) return false;}
+  return true;
 }
 
-function updateGhost(x,y){clearGhost();const rect=grid.getBoundingClientRect();
-const gx=Math.floor((x-rect.left)/(rect.width/10));const gy=Math.floor((y-rect.top)/(rect.height/10));
-const valid=canPlace(currentPiece.shape,gx,gy);
-currentPiece.shape.forEach((row,dy)=>{row.forEach((val,dx)=>{if(val){const cx=gx+dx,cy=gy+dy;if(cx<10 && cy<10){const cell=grid.children[cy*10+cx];cell.classList.add(valid?"highlight-valid":"highlight-invalid");ghostTiles.push(cell);}}});});}
-
-function clearGhost(){ghostTiles.forEach(c=>c.classList.remove("highlight-valid","highlight-invalid"));ghostTiles=[];}
-
+// Place Piece
 function placePiece(shape,color,x,y){
   if(!canPlace(shape,x,y)) return;
-  shape.forEach((row,dy)=>{row.forEach((val,dx)=>{if(val){const cell=grid.children[(y+dy)*10+(x+dx)];const t=document.createElement("div");t.className="tile "+color;t.style.opacity=0;cell.appendChild(t);setTimeout(()=>t.style.opacity=1,50);board[y+dy][x+dx]=color;}});});
-  score+=shape.flat().filter(v=>v).length;animateScore();if(score>best){best=score;bestEl.textContent=best;}
-  clearLines();if(score>=SECRET_SCORE){secret.classList.add("show");}genPieces();
+  shape.forEach((row,dy)=>row.forEach((val,dx)=>{
+    if(val){const cell=grid.children[(y+dy)*10+(x+dx)];const t=document.createElement("div");t.className="tile "+color;t.style.opacity=0;cell.appendChild(t);
+    setTimeout(()=>{t.style.opacity=1; t.style.transform='scale(1.1)'; setTimeout(()=>t.style.transform='scale(1)',150);},50); board[y+dy][x+dx]=color;}
+  }));
+  if(score>=500 && scoreMultiplier===1) scoreMultiplier=1.05;
+  score+=shape.flat().filter(v=>v).length*scoreMultiplier;
+  updateScore();
+  clearLines();
+  if(score>=SECRET_SCORE) showSecret();
+  genPieces();
 }
 
-function animateScore(){scoreEl.classList.add("animate");setTimeout(()=>scoreEl.classList.remove("animate"),200);scoreEl.textContent=score;}
-
-function canPlace(shape,x,y){for(let dy=0;dy<shape.length;dy++){for(let dx=0;dx<shape[0].length;dx++){if(shape[dy][dx]){if(y+dy>=10||x+dx>=10||board[y+dy][x+dx]) return false;}}}return true;}
-
+// Clear Lines
 function clearLines(){
   let cleared=false;
-  for(let r=0;r<10;r++){
-    if(board[r].every(cell=>cell)){
-      explodeLine(r,"row");
-      board[r].fill(null);cleared=true;
-    }
-  }
-  for(let c=0;c<10;c++){
-    if(board.every(row=>row[c])){
-      explodeLine(c,"col");
-      for(let r=0;r<10;r++){board[r][c]=null;}cleared=true;
-    }
-  }
-  if(cleared){score+=10;animateScore();}
+  for(let r=0;r<10;r++){if(board[r].every(c=>c)){board[r].fill(null);for(let c=0;c<10;c++) grid.children[r*10+c].innerHTML="";cleared=true;}}
+  for(let c=0;c<10;c++){if(board.every(row=>row[c])){for(let r=0;r<10;r++){board[r][c]=null;grid.children[r*10+c].innerHTML="";}cleared=true;}}
+  if(cleared){score+=10; updateScore();}
 }
 
-function explodeLine(index,type){
-  if(type==="row"){for(let c=0;c<10;c++){explodeCell(index*10+c);grid.children[index*10+c].innerHTML="";}}
-  else{for(let r=0;r<10;r++){explodeCell(r*10+index);grid.children[r*10+index].innerHTML="";}}
-}
+// Update Score
+function updateScore(){scoreEl.textContent=Math.floor(score); scoreEl.classList.add('animate'); setTimeout(()=>scoreEl.classList.remove('animate'),200);}
 
-function explodeCell(i){
-  const cell=grid.children[i];
-  const rect=cell.getBoundingClientRect();
-  const colorsArr=['#ffd54d','#39d353','#6ec7ff','#a06bff','#ff6b6b','#3b82f6'];
-  for(let j=0;j<6;j++){
-    const p=document.createElement("div");
-    const size=Math.random()*6+4;p.style.width=p.style.height=size+"px";
-    p.style.background=colorsArr[Math.floor(Math.random()*colorsArr.length)];
-    p.style.borderRadius="50%";p.style.position="fixed";
-    p.style.left=rect.left+rect.width/2+"px";p.style.top=rect.top+rect.height/2+"px";
-    p.style.opacity=1;document.body.appendChild(p);
-    const dx=(Math.random()-0.5)*60,dy=(Math.random()-0.5)*60;
-    p.animate([{transform:`translate(0px,0px)`,opacity:1},{transform:`translate(${dx}px,${dy}px)`,opacity:0}],{duration:400,fill:"forwards"});
-    setTimeout(()=>p.remove(),400);
+// Show Secret with Confetti
+function showSecret(){
+  if(secret.classList.contains("show")) return;
+  secret.classList.add("show");
+  const card=secret.querySelector(".secret-card"); card.innerHTML='';
+  const close=document.createElement("button"); close.className='btn'; close.textContent='Fermer'; close.onclick=()=>secret.classList.remove("show"); card.appendChild(close);
+  secretMessage.split("\n\n").forEach(para=>{
+    const p=document.createElement("p"); p.textContent=para; p.style.marginBottom="12px"; card.appendChild(p);
+  });
+  card.classList.add("show");
+  secretAudio.currentTime=0; secretAudio.play().catch(()=>console.log("Interaction requise"));
+
+  // Confetti
+  for(let i=0;i<150;i++){
+    const c=document.createElement("div"); c.className="confetti";
+    c.style.backgroundColor=colors[Math.floor(Math.random()*colors.length)];
+    c.style.left=Math.random()*window.innerWidth+"px";
+    c.style.top=-10+"px";
+    c.style.animationDuration=(2+Math.random()*2)+"s";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),4000);
   }
 }
 
+// Buttons
 document.getElementById("new").onclick=init;
 document.getElementById("shuffle").onclick=genPieces;
-closeSecret.onclick=()=>secret.classList.remove("show");
+closeSecret?.addEventListener("click",()=>secret.classList.remove("show"));
 
+// Start Game
 init();
+// --- Test message secret avec touche P ---
+window.addEventListener("keydown", (e) => {
+  if (e.key.toLowerCase() === "p") {
+    score = 1000;        // Force le score à 1000
+    animateScore();      // Met à jour l'affichage du score
+    showSecret();        // Affiche le message secret
+    console.log("Test : message secret déclenché !");
+  }
+});
 </script>
 </body>
 </html>
+
+
+
+
+
 
